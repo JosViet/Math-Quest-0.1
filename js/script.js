@@ -290,7 +290,10 @@ function parseLatexBlock(latexBlock, questionType) {
         if (questionType === 'trac_nghiem_mot_dap_an') {
             result.type = 'mcq';
             const choiceData = extractBalancedContent(content, '\\choice');
-            if (!choiceData) return null;
+            if (!choiceData) {
+                console.warn("Lỗi Parse MCQ: Không tìm thấy khối '\\choice'. Câu hỏi bị bỏ qua:", content.substring(0, 50) + '...');
+                return null;
+            }
 
             result.question = content.substring(0, choiceData.startIndex).trim();
             
@@ -1027,6 +1030,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
