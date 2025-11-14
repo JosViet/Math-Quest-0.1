@@ -49,8 +49,8 @@ let questionTimerInterval = null;
 let timeLeft = 0;
 
 // --- Cấu hình Game ---
-const QUESTION_TIME_LIMIT = 60;
-let practiceQuestionsPerChapter = 4;
+const QUESTION_TIME_LIMIT = 180;
+let practiceQuestionsPerChapter = 10;
 const LEADERBOARD_KEY = 'mathQuestLeaderboard';
 const ACHIEVEMENTS_KEY = 'mathQuestAchievements';
 
@@ -1037,6 +1037,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
