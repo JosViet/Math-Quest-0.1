@@ -520,6 +520,11 @@ function startSelectedPlaythrough(isReviewMode = false) {
             q.metadata.mon_ma === selectedSubject &&
             selectedChapterIds.includes(q.metadata.chuong)
         );
+        // [THÊM ĐOẠN CODE ĐIỀU TRA NÀY VÀO]
+        console.log(`Đã lọc được ${filteredRawQuestions.length} câu hỏi thô.`);
+        const mcqCount = filteredRawQuestions.filter(q => q.question_type === 'trac_nghiem_mot_dap_an').length;
+        console.log(`Trong đó có ${mcqCount} câu trắc nghiệm.`);
+        // ===================================
 
         questionsInCurrentPlaythrough = filteredRawQuestions
             .map(q => parseLatexBlock(q.latex_block, q.question_type))
@@ -1022,6 +1027,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
