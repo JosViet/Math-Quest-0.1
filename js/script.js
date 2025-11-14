@@ -198,7 +198,13 @@ function initializeApp() {
     safeSetOnClick(closeLeaderboardModalBtn, () => leaderboardModal.classList.add('hidden'));
     safeSetOnClick(achievementsButton, displayAchievementsModal);
     safeSetOnClick(closeAchievementsModalBtn, () => achievementsModal.classList.add('hidden'));
-    safeSetOnClick(replayChapterButton, () => {chapterModal.classList.add('hidden'); startSelectedPlaythrough(false))};
+    safeSetOnClick(replayChapterButton, () => {
+        // [THÊM DÒNG NÀY] Ẩn modal kết thúc trước khi bắt đầu lại
+        chapterModal.classList.add('hidden');
+        
+        // Giữ nguyên logic bắt đầu lại
+        startSelectedPlaythrough(false); 
+    });
     safeSetOnClick(nextChapterButton, showMainMenu);
 
     // Load các thành phần khác
@@ -1016,6 +1022,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
