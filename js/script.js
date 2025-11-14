@@ -184,43 +184,114 @@ function initializeApp() {
 // PHẦN 3: LOGIC PARSER DỮ LIỆU
 // =================================================================================
 
+/**
+ * Phân tích một khối LaTeX từ Question Bank để chuyển đổi thành định dạng object cho game.
+ * Hỗ trợ các loại: trac_nghiem_mot_dap_an, tra_loi_ngan, trac_nghiem_dung_sai.
+ * [V2] Bỏ qua câu hỏi chứa hình vẽ/lệnh phức tạp và hỗ trợ nhiều đáp án đúng.
+ * @param {string} latexBlock - Chuỗi LaTeX thô từ database.
+ * @param {string} questionType - Loại câu hỏi (ví dụ: 'trac_nghiem_mot_dap_an').
+ * @returns {object|null} - Một object câu hỏi đã được định dạng, hoặc null nếu không thể phân tích.
+ */
 function parseLatexBlock(latexBlock, questionType) {
     try {
-        let content = latexBlock.replace(/\\begin{ex}(.*?)\\end{ex}/s, '$1').trim();
-        content = content.replace(/%\[.*?\]/g, '').trim();
-        const result = { question: '', options: [], answer: '', tip: '', type: '' };
-        const tipMatch = content.match(/\\loigiai\s*\{(.*?)\}/s);
+        // --- Bước 1: Kiểm tra và loại bỏ ngay các câu hỏi phức tạp ---
+        if (/\\immini|\\begin{tikzpicture}/.test(latexBlock)) {
+            console.log("Bỏ qua câu hỏi chứa lệnh phức tạp:", latexBlock.substring(0, 50) + "...");
+            return null;
+        }
+
+        // --- Bước 2: Chuẩn bị nội dung thô và trích xuất lời giải ---
+        let content = latexBlock
+            .replace(/\\begin{ex}([\s\S]*?)\\end{ex}/s, '$1')
+            .replace(/%\[.*?\]/g, '')
+            .trim();
+
+        const result = {
+            question: '',
+            options: [],
+            answer: null, // Sẽ là chuỗi hoặc mảng
+            tip: '',
+            type: '' 
+        };
+
+        const tipMatch = content.match(/\\loigiai\s*\{([\s\S]*?)\}/s);
         if (tipMatch) {
             result.tip = tipMatch[1].trim();
-            content = content.replace(/\\loigiai\s*\{(.*?)\}/s, '').trim();
+            content = content.replace(/\\loigiai\s*\{([\s\S]*?)\}/s, '').trim();
         }
+        
+        // Dọn dẹp môi trường center (thường chứa hình)
+        content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
+
+        // --- Bước 4: Phân tích dựa trên loại câu hỏi ---
         if (questionType === 'trac_nghiem_mot_dap_an') {
             result.type = 'mcq';
-            const choiceMatch = content.match(/\\choice\s*\{(.*?)\}/s);
+            const choiceMatch = content.match(/\\choice\s*\{([\s\S]*?)\}/s);
             if (!choiceMatch) return null;
-            const questionText = content.substring(0, choiceMatch.index).trim();
-            result.question = questionText.replace(/\\begin{center}[\s\S]*?\\end{center}/g, '[Hình ảnh minh họa]');
-            let optionsBlock = choiceMatch[1];
-            const optionRegex = /{\s*(\\True\s*)?(.*?)\s*}/g;
+
+            result.question = content.substring(0, choiceMatch.index).trim();
+            
+            const optionsBlock = choiceMatch[1];
+            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
             let match;
+            
             while ((match = optionRegex.exec(optionsBlock)) !== null) {
                 const optionText = match[2].trim();
-                result.options.push(optionText);
-                if (match[1]) { result.answer = optionText; }
+                if (optionText) {
+                    result.options.push(optionText);
+                    if (match[1]) {
+                        result.answer = optionText;
+                    }
+                }
             }
-        } else if (questionType === 'tra_loi_ngan') {
+        } 
+        else if (questionType === 'tra_loi_ngan') {
             result.type = 'fill';
-            const answerMatch = content.match(/\\shortans\[.*?\]\s*\{(.*?)\}/s);
+            const answerMatch = content.match(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s);
             if (!answerMatch) return null;
+
             result.answer = answerMatch[1].trim();
-            result.question = content.replace(/\\shortans\[.*?\]\s*\{(.*?)\}/s, '').trim();
-        } else {
-            return null; // Tạm thời bỏ qua các dạng câu hỏi khác
+            result.question = content.replace(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s, '').trim();
         }
+        else if (questionType === 'trac_nghiem_dung_sai') {
+            result.type = 'mcq_multiple'; // <-- LOẠI CÂU HỎI MỚI
+            const choiceTFMatch = content.match(/\\choiceTF\s*\{([\s\S]*?)\}/s);
+            if (!choiceTFMatch) return null;
+
+            result.question = content.substring(0, choiceTFMatch.index).trim() + 
+                              "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
+            
+            result.answer = []; // <-- Đáp án là một MẢNG
+            
+            const optionsBlock = choiceTFMatch[1];
+            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
+            let match;
+            
+            while ((match = optionRegex.exec(optionsBlock)) !== null) {
+                const optionText = match[2].trim();
+                if (optionText) {
+                    result.options.push(optionText);
+                    if (match[1]) {
+                        result.answer.push(optionText); // <-- Thêm vào mảng đáp án đúng
+                    }
+                }
+            }
+        }
+        else {
+            return null; // Bỏ qua các loại câu hỏi không xác định
+        }
+
+        // --- Bước 5 & 6: Dọn dẹp cuối cùng và kiểm tra tính hợp lệ ---
+        result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
+        
         if (!result.question || !result.answer) return null;
+        if (result.type === 'mcq_multiple' && result.answer.length === 0) return null; // Loại bỏ nếu không có đáp án đúng nào
+        if (result.type.startsWith('mcq') && result.options.length < 2) return null;
+
         return result;
+
     } catch (error) {
-        console.error("Lỗi khi phân tích LaTeX block:", error, latexBlock);
+        console.error("Lỗi nghiêm trọng khi phân tích LaTeX block:", error, latexBlock);
         return null;
     }
 }
@@ -393,8 +464,11 @@ function loadQuestion() {
         endGame();
         return;
     }
+
     const q = questionsInCurrentPlaythrough[currentQuestionIndex];
     currentQuestionForGemini = q;
+
+    // --- Dọn dẹp giao diện từ câu hỏi trước ---
     questionNumber.textContent = `Câu ${currentQuestionIndex + 1}/${questionsInCurrentPlaythrough.length}:`;
     const cleanedQuestion = q.question.replace(/(\r\n|\n|\r)/gm, " ").trim();
     questionText.innerHTML = `<span>${cleanedQuestion}</span>`;
@@ -404,28 +478,112 @@ function loadQuestion() {
     nextButton.disabled = true;
     explainButton.classList.add('hidden');
     confettiContainer.innerHTML = '';
+
+    // Dọn dẹp nút "Xác Nhận" của câu hỏi nhiều đáp án (nếu có)
+    const oldSubmitBtn = document.getElementById('multiple-choice-submit');
+    if (oldSubmitBtn) {
+        oldSubmitBtn.remove();
+    }
+
+    // --- Cập nhật trạng thái và hiển thị timer ---
     updatePowerUpButtons();
     timerDisplay.style.display = (gameMode === 'challenge') ? 'flex' : 'none';
-    if (gameMode === 'challenge') startQuestionTimer();
+    if (gameMode === 'challenge') {
+        startQuestionTimer();
+    }
+
+    // --- Tải câu hỏi dựa trên loại (type) ---
     if (q.type === 'fill') {
-        optionsContainer.innerHTML = `<div class="flex flex-col items-center justify-center gap-4 py-8"><input type="text" id="fill-in-blank-input" class="fill-in-blank-input" placeholder="Nhập đáp án của bạn..."><button id="fill-in-blank-submit" class="fill-in-blank-submit">Kiểm Tra</button></div>`;
+        // --- Dạng ĐIỀN KHUYẾT ---
+        optionsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center gap-4 py-8">
+                <input type="text" id="fill-in-blank-input" class="fill-in-blank-input" placeholder="Nhập đáp án của bạn...">
+                <button id="fill-in-blank-submit" class="fill-in-blank-submit">Kiểm Tra</button>
+            </div>`;
         const input = document.getElementById('fill-in-blank-input');
         input.onkeydown = (e) => { if (e.key === 'Enter') checkFillInBlankAnswer(q); };
         document.getElementById('fill-in-blank-submit').onclick = () => checkFillInBlankAnswer(q);
         setTimeout(() => input.focus(), 100);
-    } else {
+
+    } else if (q.type === 'mcq_multiple') {
+        // --- Dạng TRẮC NGHIỆM NHIỀU ĐÁP ÁN ---
         optionsContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+        
         shuffleArray([...q.options]).forEach(option => {
             const button = document.createElement('button');
             button.innerHTML = option;
             button.dataset.optionValue = option;
             button.classList.add('option-button', 'w-full', 'p-4', 'rounded-xl', 'text-lg', 'font-medium', 'text-left');
-            button.onclick = () => checkAnswer(button, option, q.answer);
+            // Thêm sự kiện để chọn/bỏ chọn
+            button.onclick = () => {
+                button.classList.toggle('selected'); // Thêm class 'selected' khi được click
+            };
+            optionsContainer.appendChild(button);
+        });
+
+        // Thêm nút "Xác nhận" bên ngoài optionsContainer
+        const submitButton = document.createElement('button');
+        submitButton.id = 'multiple-choice-submit';
+        submitButton.textContent = 'Xác Nhận Lựa Chọn';
+        submitButton.className = 'fill-in-blank-submit mt-4 mx-auto'; // Tận dụng style, căn giữa
+        submitButton.onclick = () => checkMultipleAnswers(q);
+        
+        // Chèn nút Xác Nhận vào sau vùng chứa các lựa chọn
+        optionsContainer.insertAdjacentElement('afterend', submitButton);
+
+    } else { 
+        // --- Dạng TRẮC NGHIỆM MỘT ĐÁP ÁN (mặc định) ---
+        optionsContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+        
+        shuffleArray([...q.options]).forEach(option => {
+            const button = document.createElement('button');
+            button.innerHTML = option;
+            button.dataset.optionValue = option;
+            button.classList.add('option-button', 'w-full', 'p-4', 'rounded-xl', 'text-lg', 'font-medium', 'text-left');
+            button.onclick = () => checkAnswer(button, option, q.answer); // Logic cũ
             optionsContainer.appendChild(button);
         });
     }
-    if (window.MathJax) MathJax.typesetPromise([questionContainer, optionsContainer]).catch(console.error);
+
+    // --- Render MathJax và cập nhật thanh tiến trình ---
+    if (window.MathJax) {
+        MathJax.typesetPromise([questionContainer, optionsContainer]).catch(console.error);
+    }
     updateProgress();
+}
+function checkMultipleAnswers(q) {
+    if (!gameActive || !nextButton.disabled) return;
+    
+    soundClick.play().catch(e => {});
+    disableAllInputs(); // Vô hiệu hóa tất cả các nút
+
+    // Lấy tất cả các đáp án người dùng đã chọn
+    const selectedNodes = document.querySelectorAll('.option-button.selected');
+    const userAnswers = Array.from(selectedNodes).map(node => node.dataset.optionValue);
+    
+    // Sắp xếp cả hai mảng để so sánh
+    const sortedUserAnswers = [...userAnswers].sort();
+    const sortedCorrectAnswers = [...q.answer].sort();
+
+    // So sánh hai mảng đã sắp xếp
+    const isCorrect = sortedUserAnswers.length === sortedCorrectAnswers.length && 
+                      sortedUserAnswers.every((value, index) => value === sortedCorrectAnswers[index]);
+
+    // Hiển thị phản hồi
+    document.querySelectorAll('.option-button').forEach(btn => {
+        const optionValue = btn.dataset.optionValue;
+        // Tô xanh đáp án đúng
+        if (q.answer.includes(optionValue)) {
+            btn.classList.add('correct');
+        }
+        // Tô đỏ đáp án sai mà người dùng đã chọn
+        if (userAnswers.includes(optionValue) && !q.answer.includes(optionValue)) {
+            btn.classList.add('incorrect');
+        }
+    });
+    
+    gameReport.push({ question: q.question, userAnswer: userAnswers.join('; '), correctAnswer: q.answer.join('; ') });
+    showFeedback(isCorrect, q.answer.join('; '));
 }
 
 function endGame() {
@@ -767,6 +925,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
