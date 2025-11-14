@@ -15,7 +15,10 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="flex items-center justify-center h-screen overflow-hidden">
-
+    <div id="initial-loader" class="loader-fullscreen">
+        <div class="gemini-loader"></div>
+        <p class="text-white mt-4">Đang tải ngân hàng câu hỏi...</p>
+    </div>
     <div id="game-container" class="flex flex-col rounded-3xl shadow-2xl overflow-hidden p-4 md:p-6 text-gray-800 relative">
         
         <header class="flex justify-between items-center mb-2">
@@ -115,7 +118,7 @@
                 <input type="number" id="practice-qpc-input" value="4" min="1" max="6" class="w-20 p-2 rounded-lg text-center font-bold text-xl text-indigo-700 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
             </div>
             <div class="mt-6 flex space-x-4">
-                <button id="back-to-main-button" class="bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-white transition-all duration-300 transform hover:scale-105"><i class="fas fa-arrow-left mr-2"></i> Quay Lại</button>
+                <button id="back-from-chapter-select" class="bg-gray-200 ..."><i class="fas fa-arrow-left mr-2"></i> Quay Lại</button>
                 <button id="start-chapter-selection-button" class="text-lg" disabled>Bắt Đầu <i class="fas fa-play ml-2"></i></button>
             </div>
         </div>
@@ -144,22 +147,44 @@
         <div id="achievement-toast" class="fixed bottom-5 right-5 bg-gray-900 text-white p-4 rounded-lg shadow-2xl flex items-center gap-4 transition-transform duration-500 translate-x-[120%] z-50">
             <!-- Nội dung sẽ được JS chèn vào -->
         </div>
+        <!-- Modal Chọn Lớp -->
+        <div id="grade-selection-modal" class="custom-modal hidden">
+            <div class="modal-content">
+                <h2 class="modal-main-title">Chọn Khối Lớp</h2>
+                <div id="grade-select-grid" class="selection-grid">
+                    <!-- Các nút chọn lớp sẽ được JS chèn vào đây -->
+                </div>
+                <button onclick="showMainMenu()" class="modal-back-button">
+                     <i class="fas fa-arrow-left mr-2"></i> Quay Lại
+                </button>
+            </div>
+        </div>
 
-	<!-- MODAL DANH SÁCH DANH HIỆU -->
-	<div id="achievements-modal" class="fixed inset-0 bg-black bg-opacity-70 items-center justify-center p-4 hidden z-[70]">
-	    <div class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-xl p-8 relative animate-scale-in">
-	        <h2 class="text-3xl font-extrabold text-center text-indigo-800 mb-6">Bộ Sưu Tập Danh Hiệu</h2>
-	        <ul id="achievements-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-	            <!-- Danh sách sẽ được JS chèn vào -->
-	        </ul>
-	        <button id="close-achievements-modal" class="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-2xl">
-	            <i class="fas fa-times-circle"></i>
-	        </button>
-	</div>
+        <!-- Modal Chọn Môn -->
+        <div id="subject-selection-modal" class="custom-modal hidden">
+            <div class="modal-content">
+                <h2 id="subject-select-title" class="modal-main-title">Chọn Môn</h2>
+                <div id="subject-select-grid" class="selection-grid">
+                    <!-- Các nút chọn môn sẽ được JS chèn vào đây -->
+                </div>
+                <button id="back-to-grade-select" class="modal-back-button">
+                     <i class="fas fa-arrow-left mr-2"></i> Quay Lại
+                </button>
+            </div>
+        </div>
+    	<!-- MODAL DANH SÁCH DANH HIỆU -->
+    	<div id="achievements-modal" class="fixed inset-0 bg-black bg-opacity-70 items-center justify-center p-4 hidden z-[70]">
+    	    <div class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-xl p-8 relative animate-scale-in">
+    	        <h2 class="text-3xl font-extrabold text-center text-indigo-800 mb-6">Bộ Sưu Tập Danh Hiệu</h2>
+    	        <ul id="achievements-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+    	            <!-- Danh sách sẽ được JS chèn vào -->
+    	        </ul>
+    	        <button id="close-achievements-modal" class="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-2xl">
+    	            <i class="fas fa-times-circle"></i>
+    	        </button>
+    	</div>
     </div>
     
-    <script src="js/questions.js"></script>
-    <script src="js/achievements.js"></script>
     <script src="js/script.js"></script>
 </body>
 </html>
