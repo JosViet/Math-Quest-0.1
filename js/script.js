@@ -114,7 +114,7 @@ const subjectSelectionModal = document.getElementById('subject-selection-modal')
 const subjectSelectTitle = document.getElementById('subject-select-title');
 const subjectSelectGrid = document.getElementById('subject-select-grid');
 const backToGradeSelectBtn = document.getElementById('back-to-grade-select');
-const backFromChapterSelectBtn = document.getElementById('back-to-main-button'); 
+const backFromChapterSelectBtn = document.getElementById('back-to-subject-select'); 
 
 
 // =================================================================================
@@ -786,6 +786,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
