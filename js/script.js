@@ -159,8 +159,8 @@ async function loadGameData() {
     try {
         console.log("Bắt đầu tải dữ liệu game...");
         const [mapResponse, bankResponse] = await Promise.all([
-            fetch('js/knowledge_map.json'),
-            fetch('js/database.json')
+            fetch('./js/knowledge_map.json'),
+            fetch('./js/database.json')
         ]);
         if (!mapResponse.ok || !bankResponse.ok) {
             throw new Error('Không thể tải file dữ liệu.');
@@ -821,4 +821,5 @@ function checkAchievements() {
     if (gameMode === 'challenge' && totalScore >= 100) {
         unlockAchievement('scholar');
     }
+
 }
