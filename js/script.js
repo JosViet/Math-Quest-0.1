@@ -185,12 +185,49 @@ function initializeApp() {
 // =================================================================================
 
 /**
+ * Trích xuất nội dung của một lệnh LaTeX có dấu ngoặc {}, xử lý các cặp ngoặc lồng nhau.
+ * @param {string} text - Chuỗi để tìm kiếm.
+ * @param {string} command - Tên lệnh (ví dụ: '\\loigiai').
+ * @returns {{content: string, startIndex: number, endIndex: number}|null}
+ */
+function extractBalancedContent(text, command) {
+    const commandStart = text.indexOf(command);
+    if (commandStart === -1) return null;
+
+    const openBraceIndex = text.indexOf('{', commandStart);
+    if (openBraceIndex === -1) return null;
+
+    let balance = 1;
+    let endIndex = -1;
+
+    for (let i = openBraceIndex + 1; i < text.length; i++) {
+        if (text[i] === '{') {
+            balance++;
+        } else if (text[i] === '}') {
+            balance--;
+        }
+        if (balance === 0) {
+            endIndex = i;
+            break;
+        }
+    }
+
+    if (endIndex === -1) return null; // Không tìm thấy cặp ngoặc cân bằng
+
+    return {
+        content: text.substring(openBraceIndex + 1, endIndex),
+        startIndex: commandStart,
+        endIndex: endIndex + 1,
+    };
+}
+
+
+/**
  * Phân tích một khối LaTeX từ Question Bank để chuyển đổi thành định dạng object cho game.
- * Hỗ trợ các loại: trac_nghiem_mot_dap_an, tra_loi_ngan, trac_nghiem_dung_sai.
- * [V2] Bỏ qua câu hỏi chứa hình vẽ/lệnh phức tạp và hỗ trợ nhiều đáp án đúng.
+ * [V4] Sử dụng logic cân bằng dấu ngoặc để trích xuất \loigiai chính xác.
  * @param {string} latexBlock - Chuỗi LaTeX thô từ database.
- * @param {string} questionType - Loại câu hỏi (ví dụ: 'trac_nghiem_mot_dap_an').
- * @returns {object|null} - Một object câu hỏi đã được định dạng, hoặc null nếu không thể phân tích.
+ * @param {string} questionType - Loại câu hỏi.
+ * @returns {object|null} - Object câu hỏi đã được định dạng, hoặc null.
  */
 function parseLatexBlock(latexBlock, questionType) {
     try {
@@ -203,33 +240,28 @@ function parseLatexBlock(latexBlock, questionType) {
             .replace(/%\[.*?\]/g, '')
             .trim();
 
-        const result = {
-            question: '',
-            options: [],
-            answer: null,
-            tip: '',
-            type: '' 
-        };
+        const result = { question: '', options: [], answer: null, tip: '', type: '' };
 
-        // --- Bước 2: Trích xuất lời giải VÀ XÓA NÓ KHỎI content ---
-        const tipMatch = content.match(/\\loigiai\s*\{([\s\S]*?)\}/s);
-        if (tipMatch) {
-            result.tip = tipMatch[1].trim();
-            // [SỬA LỖI] Xóa toàn bộ khối \loigiai{...} khỏi content
-            content = content.replace(/\\loigiai\s*\{([\s\S]*?)\}/s, '').trim();
+        // --- [NÂNG CẤP] Sử dụng hàm mới để trích xuất lời giải ---
+        const tipData = extractBalancedContent(content, '\\loigiai');
+        if (tipData) {
+            result.tip = tipData.content.trim();
+            // Xóa toàn bộ khối \loigiai khỏi content
+            content = content.substring(0, tipData.startIndex) + content.substring(tipData.endIndex);
+            content = content.trim();
         }
         
         content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
 
-        // --- Bước 4: Phân tích dựa trên loại câu hỏi ---
+        // --- Phân tích loại câu hỏi (giữ nguyên logic cũ) ---
         if (questionType === 'trac_nghiem_mot_dap_an') {
             result.type = 'mcq';
-            const choiceMatch = content.match(/\\choice\s*\{([\s\S]*?)\}/s);
-            if (!choiceMatch) return null;
+            const choiceData = extractBalancedContent(content, '\\choice');
+            if (!choiceData) return null;
 
-            result.question = content.substring(0, choiceMatch.index).trim();
+            result.question = content.substring(0, choiceData.startIndex).trim();
             
-            const optionsBlock = choiceMatch[1];
+            const optionsBlock = choiceData.content;
             const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
             let match;
             
@@ -249,21 +281,19 @@ function parseLatexBlock(latexBlock, questionType) {
             if (!answerMatch) return null;
 
             result.answer = answerMatch[1].trim();
-            // [SỬA LỖI] Xóa toàn bộ khối \shortans[...]\{...\} khỏi content
             result.question = content.replace(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s, '').trim();
         }
         else if (questionType === 'trac_nghiem_dung_sai') {
-            // ... (Logic cho mcq_multiple giữ nguyên, đã đúng)
             result.type = 'mcq_multiple';
-            const choiceTFMatch = content.match(/\\choiceTF\s*\{([\s\S]*?)\}/s);
-            if (!choiceTFMatch) return null;
+            const choiceTFData = extractBalancedContent(content, '\\choiceTF');
+            if (!choiceTFData) return null;
 
-            result.question = content.substring(0, choiceTFMatch.index).trim() + 
+            result.question = content.substring(0, choiceTFData.startIndex).trim() + 
                               "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
             
             result.answer = [];
             
-            const optionsBlock = choiceTFMatch[1];
+            const optionsBlock = choiceTFData.content;
             const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
             let match;
             
@@ -281,7 +311,11 @@ function parseLatexBlock(latexBlock, questionType) {
             return null;
         }
 
-        // --- Bước 5 & 6: Dọn dẹp và kiểm tra ---
+        // --- Dọn dẹp và kiểm tra ---
+        // Chuyển đổi các môi trường itemize thành danh sách HTML
+        result.question = result.question.replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>').replace(/\\item/g, '<li>');
+        result.tip = result.tip.replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>').replace(/\\item/g, '<li>');
+        
         result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
         
         if (!result.question || !result.answer) return null;
@@ -924,6 +958,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
