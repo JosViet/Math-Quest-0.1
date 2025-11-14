@@ -146,39 +146,57 @@ async function loadGameData() {
 }
 
 function initializeApp() {
+    // [QUAN TRỌNG] Ẩn màn hình loading ngay lập tức
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
+
     // Tải âm thanh
     loadSound(soundCorrect, soundCorrectBase64, 'đúng'); loadSound(soundIncorrect, soundIncorrectBase64, 'sai');
     loadSound(soundClick, soundClickBase64, 'click'); loadSound(soundStart, soundStartBase64, 'bắt đầu');
     loadSound(soundTimerTick, soundTimerTickBase64, 'đồng hồ'); loadSound(soundPowerup, soundPowerupBase64, 'trợ giúp');
 
-
-    // Gán sự kiện onclick
-    practiceButton.onclick = () => { gameMode = 'practice'; showGradeSelection(); };
-    challengeButton.onclick = () => { gameMode = 'challenge'; showGradeSelection(); };
-    backToGradeSelectBtn.onclick = showGradeSelection;
-    backFromChapterSelectBtn.onclick = showSubjectSelection; 
-    startChapterSelectionButton.onclick = () => startSelectedPlaythrough(false);
-    practiceQPCInput.onchange = (e) => {
-        let val = parseInt(e.target.value);
-        if (isNaN(val) || val < 1) val = 1; if (val > 10) val = 10;
-        practiceQuestionsPerChapter = val; e.target.value = val;
+    // [NÂNG CẤP] Tạo một hàm phụ để gán sự kiện an toàn
+    const safeSetOnClick = (element, handler) => {
+        if (element) {
+            element.onclick = handler;
+        } else {
+            // Lỗi này sẽ chỉ hiện ra cho bạn, không làm crash game
+            console.error('Lỗi: Không tìm thấy một DOM element cần thiết. Kiểm tra lại ID trong HTML.');
+        }
     };
-    nextButton.onclick = nextQuestionInChapter;
-    explainButton.onclick = handleExplainAnswer;
-    closeGeminiModalButton.onclick = closeGeminiModal;
-    powerup5050Btn.onclick = useFiftyFifty;
-    powerupAddTimeBtn.onclick = useAddTime;
-    leaderboardButton.onclick = displayLeaderboard;
-    closeLeaderboardModalBtn.onclick = () => leaderboardModal.classList.add('hidden');
-    achievementsButton.onclick = displayAchievementsModal;
-    closeAchievementsModalBtn.onclick = () => achievementsModal.classList.add('hidden');
-    replayChapterButton.onclick = () => startSelectedPlaythrough(false); 
-    nextChapterButton.onclick = showMainMenu;
+
+    // Gán sự kiện onclick một cách an toàn
+    safeSetOnClick(practiceButton, () => { gameMode = 'practice'; showGradeSelection(); });
+    safeSetOnClick(challengeButton, () => { gameMode = 'challenge'; showGradeSelection(); });
+    safeSetOnClick(backToGradeSelectBtn, showGradeSelection);
+    safeSetOnClick(backFromChapterSelectBtn, showSubjectSelection); 
+    safeSetOnClick(startChapterSelectionButton, () => startSelectedPlaythrough(false));
+    
+    if (practiceQPCInput) {
+        practiceQPCInput.onchange = (e) => {
+            let val = parseInt(e.target.value);
+            if (isNaN(val) || val < 1) val = 1; if (val > 10) val = 10;
+            practiceQuestionsPerChapter = val; e.target.value = val;
+        };
+    }
+    
+    safeSetOnClick(nextButton, nextQuestionInChapter);
+    safeSetOnClick(explainButton, handleExplainAnswer);
+    safeSetOnClick(closeGeminiModalButton, closeGeminiModal);
+    safeSetOnClick(powerup5050Btn, useFiftyFifty);
+    safeSetOnClick(powerupAddTimeBtn, useAddTime);
+    safeSetOnClick(leaderboardButton, displayLeaderboard);
+    safeSetOnClick(closeLeaderboardModalBtn, () => leaderboardModal.classList.add('hidden'));
+    safeSetOnClick(achievementsButton, displayAchievementsModal);
+    safeSetOnClick(closeAchievementsModalBtn, () => achievementsModal.classList.add('hidden'));
+    safeSetOnClick(replayChapterButton, () => startSelectedPlaythrough(false)); 
+    safeSetOnClick(nextChapterButton, showMainMenu);
 
     // Load các thành phần khác
-    // loadUnlockedAchievements(); // Tạm thời comment lại nếu có file achievements.js riêng
+    loadUnlockedAchievements(); // Tạm thời comment lại
 }
-
 
 // =================================================================================
 // PHẦN 3: LOGIC PARSER DỮ LIỆU
@@ -967,6 +985,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
