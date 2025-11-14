@@ -263,97 +263,94 @@ function extractBalancedContent(text, command) {
  */
 function parseLatexBlock(latexBlock, questionType) {
     try {
-        // --- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN LOẠI BỎ ---
         if (/\\immini|\\begin{tikzpicture}|\\begin{bt}/.test(latexBlock)) {
-            return null; // Bỏ qua câu hỏi phức tạp một cách thầm lặng
+            return null;
         }
 
-        // --- BƯỚC 2: CHUẨN BỊ NỘI DUNG THÔ ---
         let content = latexBlock
             .replace(/\\begin{ex}([\s\S]*?)\\end{ex}/s, '$1')
             .replace(/%\[.*?\]/g, '')
             .trim();
-        
+
         content = content.replace(/\\begin{multicols}{\d+}/g, '').replace(/\\end{multicols}/g, '');
-        content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
 
         const result = { question: '', options: [], answer: null, tip: '', type: '' };
 
-        // --- BƯỚC 3: TRÍCH XUẤT LỜI GIẢI (CẢI TIẾN) ---
+        // --- [SỬA LỖI CỐT LÕI] Sửa cách trích xuất và xóa \loigiai ---
         const tipData = extractBalancedContent(content, '\\loigiai');
         if (tipData) {
             result.tip = tipData.content.trim();
-            content = content.substring(0, tipData.startIndex).trim(); // Chỉ giữ lại phần trước \loigiai
+            // Xóa chính xác khối \loigiai đã tìm thấy khỏi content
+            content = content.substring(0, tipData.startIndex) + content.substring(tipData.endIndex);
+            content = content.trim();
         }
         
-        // --- BƯỚC 4: PHÂN TÍCH THEO LOẠI ---
+        content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
+
+        // --- QUAY LẠI LOGIC PARSE ỔN ĐỊNH CỦA V6 ---
         
         if (questionType === 'trac_nghiem_mot_dap_an') {
             result.type = 'mcq';
-            const choiceData = extractBalancedContent(content, '\\choice');
-            if (!choiceData) return null;
-
-            result.question = content.substring(0, choiceData.startIndex).trim();
+            const choiceMatch = content.match(/\\choice\s*\{([\s\S]*?)\}/s);
+            if (!choiceMatch) return null;
             
-            const optionsBlock = choiceData.content;
-            
-            // [CẢI TIẾN LỚN] Regex mạnh mẽ hơn để trích xuất lựa chọn
-            // Nó tìm kiếm { \True ... } hoặc { ... } một cách linh hoạt
-            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)(?=\s*}\\?)/g;
-            let options = optionsBlock.match(/\{[\s\S]*?\}/g) || [];
-
-            if (options.length < 2) return null; // Cần ít nhất 2 lựa chọn
-
-            options.forEach(opt => {
-                let text = opt.substring(1, opt.length - 1).trim(); // Bỏ dấu {}
-                if (text.startsWith('\\True')) {
-                    text = text.replace('\\True', '').trim();
-                    result.answer = text;
+            result.question = content.substring(0, choiceMatch.index).trim();
+            const optionsBlock = choiceMatch[1];
+            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
+            let match;
+            while ((match = optionRegex.exec(optionsBlock)) !== null) {
+                const optionText = match[2].trim();
+                if (optionText) {
+                    result.options.push(optionText);
+                    if (match[1]) result.answer = optionText;
                 }
-                result.options.push(text);
-            });
+            }
         } 
         else if (questionType === 'tra_loi_ngan') {
             result.type = 'fill';
-            // [CẢI TIẾN] Regex linh hoạt hơn cho \shortans
-            const answerMatch = content.match(/\\shortans(?:\[.*?\])?\s*\{([\s\S]*?)\}/s);
+            const answerMatch = content.match(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s);
             if (!answerMatch) return null;
-
             result.answer = answerMatch[1].trim();
-            result.question = content.replace(/\\shortans(?:\[.*?\])?\s*\{([\s\S]*?)\}/s, '').trim();
+            result.question = content.replace(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s, '').trim();
         }
         else if (questionType === 'trac_nghiem_dung_sai') {
             result.type = 'mcq_multiple';
-            const choiceTFData = extractBalancedContent(content, '\\choiceTF');
-            if (!choiceTFData) return null;
-            
-            result.question = content.substring(0, choiceTFData.startIndex).trim() + 
-                              "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
-            
+            const choiceTFMatch = content.match(/\\choiceTF\s*\{([\s\S]*?)\}/s);
+            if (!choiceTFMatch) return null;
+
+            result.question = content.substring(0, choiceTFMatch.index).trim() + "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
             result.answer = [];
-            let options = choiceTFData.content.match(/\{[\s\S]*?\}/g) || [];
-            
-            options.forEach(opt => {
-                let text = opt.substring(1, opt.length - 1).trim();
-                if (text.startsWith('\\True')) {
-                    text = text.replace('\\True', '').trim();
-                    result.answer.push(text);
+            const optionsBlock = choiceTFMatch[1];
+            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
+            let match;
+            while ((match = optionRegex.exec(optionsBlock)) !== null) {
+                const optionText = match[2].trim();
+                if (optionText) {
+                    result.options.push(optionText);
+                    if (match[1]) result.answer.push(optionText);
                 }
-                result.options.push(text);
-            });
+            }
         }
         else {
-            return null; // Bỏ qua các loại câu hỏi không được hỗ trợ
+            return null;
         }
 
-        // --- BƯỚC 5: DỌN DẸP VÀ KIỂM TRA CUỐI CÙNG ---
+        // --- Dọn dẹp và kiểm tra (giữ nguyên logic của V6) ---
+        const listEnvs = ['itemize', 'enumerate'];
+        listEnvs.forEach(env => {
+            const htmlTag = (env === 'itemize') ? 'ul' : 'ol';
+            const beginRegex = new RegExp(`\\\\begin{${env}}`, 'g');
+            const endRegex = new RegExp(`\\\\end{${env}}`, 'g');
+            result.question = result.question.replace(beginRegex, `<${htmlTag}>`).replace(endRegex, `</${htmlTag}>`);
+            result.tip = result.tip.replace(beginRegex, `<${htmlTag}>`).replace(endRegex, `</${htmlTag}>`);
+        });
+        result.question = result.question.replace(/\\item/g, '<li>');
+        result.tip = result.tip.replace(/\\item/g, '<li>');
+        
         result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
-        if (result.tip) {
-            result.tip = result.tip.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
-        }
-
+        
         if (!result.question || !result.answer) return null;
-        if (Array.isArray(result.answer) && result.answer.length === 0) return null;
+        if (result.type === 'mcq_multiple' && result.answer.length === 0) return null;
         if (result.type.startsWith('mcq') && result.options.length < 2) return null;
 
         return result;
@@ -1026,6 +1023,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
