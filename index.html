@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quest: Trò Chơi Toán Học</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true }, svg: { fontCache: 'global' } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="flex items-center justify-center h-screen overflow-hidden">
+
+    <div id="game-container" class="flex flex-col rounded-3xl shadow-2xl overflow-hidden p-4 md:p-6 text-gray-800 relative">
+        
+        <header class="flex justify-between items-center mb-2">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-indigo-700">
+                <i class="fas fa-brain mr-2 text-yellow-400"></i> Math Quest
+            </h1>
+            <div class="text-xl md:text-2xl font-bold text-right flex items-center space-x-4">
+                <div id="lives-container" class="text-3xl" title="Số mạng còn lại">❤️❤️❤️</div>
+                <div id="streak-container" class="hidden items-center text-orange-500 font-bold text-xl mr-2">
+                    <i class="fas fa-fire-flame-curved mr-1"></i> <span id="streak-counter">0</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-indigo-500 text-sm">Điểm:</span>
+                    <span id="total-score" class="text-yellow-500 bg-gray-800 px-3 py-1 rounded-lg shadow-inner text-2xl">0</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="text-center mb-3">
+            <h2 id="chapter-title" class="text-2xl font-bold text-gray-700">Hãy chọn chế độ chơi!</h2>
+            <div id="chapter-progress-bar-container" class="w-1/2 max-w-xs mx-auto h-2 bg-gray-300 rounded-full overflow-hidden mt-2">
+                <div id="chapter-progress-bar" class="h-full bg-indigo-500 rounded-full"></div>
+            </div>
+        </div>
+
+        <div id="game-content" class="flex-1 flex flex-col justify-between opacity-0 transition-opacity duration-500">
+            <div class="flex-1 overflow-y-auto pr-2">
+                <div id="question-container" class="bg-white p-6 rounded-2xl shadow-lg mb-6 relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 id="question-number" class="text-lg font-semibold text-indigo-600">Câu 1/4:</h3>
+                        <div id="timer-display" class="text-2xl font-bold text-blue-600 bg-blue-100 px-4 py-1 rounded-full shadow-inner">
+                            <i class="fas fa-stopwatch mr-2"></i> <span id="timer-countdown">60</span>
+                        </div>
+                    </div>
+                    <div id="question-text" class="text-xl font-medium min-h-[50px]">Đang tải câu hỏi...</div>
+
+                    <!-- [NÂNG CẤP] Khu vực Trợ giúp (Power-ups) -->
+                    <div id="powerups-container" class="absolute top-2 right-2 flex flex-col gap-2">
+                        <button id="powerup-5050" class="powerup-button" title="50:50 (Loại bỏ 2 đáp án sai)">
+                            <i class="fas fa-star-half-alt"></i>
+                            <span id="powerup-5050-count" class="powerup-count">1</span>
+                        </button>
+                        <button id="powerup-add-time" class="powerup-button" title="+15 Giây">
+                            <i class="fas fa-hourglass-start"></i>
+                            <span id="powerup-add-time-count" class="powerup-count">1</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-gray-300"> 
+                <div class="flex items-center justify-between">
+                    <div id="feedback-message" class="text-lg font-bold opacity-0 transition-opacity duration-300 p-2 rounded-lg flex-1"></div>
+                    <div class="flex justify-end space-x-2">
+                        <button id="explain-button" class="hidden font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">✨ Giải Thích</button>
+                        <button id="next-button" class="hidden bg-indigo-600 text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-indigo-500 transition-all duration-300 transform hover:scale-105" disabled>Tiếp theo <i class="fas fa-arrow-right ml-2"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-modal" class="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-3xl flex flex-col items-center justify-center p-8 z-50 transition-opacity duration-300">
+            <h2 id="modal-title" class="text-4xl md:text-5xl font-extrabold text-white text-center mb-4">Chào mừng đến với <span class="block text-yellow-300">Math Quest!</span></h2>
+            <p id="modal-message" class="text-xl text-gray-200 text-center mb-8 max-w-lg">Hãy chọn chế độ chơi phù hợp.<br><b>Thử Thách:</b> Chơi có tính giờ và mạng sống.<br><b>Luyện Tập:</b> Chơi thoải mái, không áp lực.</p>
+            <div class="mb-6 w-full max-w-sm">
+                <label for="player-name-input" class="block text-xl text-gray-200 text-center mb-2 font-medium">Tên của bạn:</label>
+                <input type="text" id="player-name-input" placeholder="Nhập tên của bạn..." class="w-full px-5 py-3 rounded-full text-center text-lg font-medium text-indigo-700 bg-gray-200 focus:outline-none focus:ring-4 focus:ring-yellow-300">
+            </div>
+            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <button id="challenge-button" class="bg-red-500 text-white font-extrabold py-3 px-8 rounded-full text-xl shadow-xl hover:bg-red-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-200"><i class="fas fa-stopwatch mr-2"></i> Thử Thách Chương</button>
+                <button id="practice-button" class="bg-sky-500 text-white font-extrabold py-3 px-8 rounded-full text-xl shadow-xl hover:bg-sky-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-sky-200"><i class="fas fa-book-open mr-2"></i> Luyện Tập</button>
+            </div>
+            <!-- [NÂNG CẤP] Nút xem Bảng xếp hạng -->
+            <button id="leaderboard-button" class="mt-6 bg-yellow-400 text-indigo-800 font-bold py-2 px-6 rounded-full shadow-lg hover:bg-yellow-300 transition-transform transform hover:scale-105"><i class="fas fa-trophy mr-2"></i> Bảng Xếp Hạng</button>
+            <button id="achievements-button" class="main-menu-button bg-sky-400 hover:bg-sky-500"><i class="fas fa-award mr-2"></i> Danh Hiệu</button>
+        </div>
+        
+        <div id="chapter-modal" class="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-3xl hidden flex-col items-center justify-center p-8 z-[55] transition-opacity duration-300">
+            <h2 id="chapter-modal-title" class="text-4xl font-extrabold text-white text-center mb-4">Hoàn thành Chặng!</h2>
+            <div id="chapter-modal-icon" class="text-7xl mb-4">🥳</div>
+            <p id="chapter-modal-message" class="text-2xl text-gray-200 text-center mb-8 max-w-lg">Bạn đã trả lời đúng: <span id="chapter-score" class="text-yellow-300 font-bold">3/4</span></p>
+            <!-- [NÂNG CẤP] Khu vực cho nút Ôn tập sai sót -->
+            <div id="review-mistakes-container" class="mb-4"></div>
+            <div class="flex space-x-6">
+                <button id="replay-chapter-button" class="bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-white transition-all duration-300 transform hover:scale-105"><i class="fas fa-redo mr-2"></i> Chơi Lại</button>
+                <button id="next-chapter-button" class="bg-yellow-400 text-blue-900 font-extrabold py-3 px-8 rounded-full text-lg shadow-xl hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105">Về Menu Chính</button>
+            </div>
+        </div>
+
+        <div id="chapter-selection-modal" class="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-3xl hidden flex-col items-center p-8 z-[52] transition-opacity duration-300">
+            <h2 id="chapter-select-title" class="text-4xl md:text-5xl font-extrabold text-white text-center mb-6">Chọn Chương Luyện Tập</h2>
+            <div id="chapter-select-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-3xl overflow-y-auto max-h-[50vh] p-2"></div>
+            <div id="practice-options-container" class="my-4">
+                <label for="practice-qpc-input" class="text-lg font-medium text-white mr-3">Số câu hỏi mỗi chương:</label>
+                <input type="number" id="practice-qpc-input" value="4" min="1" max="6" class="w-20 p-2 rounded-lg text-center font-bold text-xl text-indigo-700 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            </div>
+            <div class="mt-6 flex space-x-4">
+                <button id="back-to-main-button" class="bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:bg-white transition-all duration-300 transform hover:scale-105"><i class="fas fa-arrow-left mr-2"></i> Quay Lại</button>
+                <button id="start-chapter-selection-button" class="text-lg" disabled>Bắt Đầu <i class="fas fa-play ml-2"></i></button>
+            </div>
+        </div>
+
+        <div id="gemini-modal" class="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-3xl hidden flex-col items-center justify-center p-8 z-[60] transition-opacity duration-300">
+            <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl p-6 md:p-8 relative max-h-[80vh] overflow-y-auto">
+                <button id="close-gemini-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"><i class="fas fa-times-circle"></i></button>
+                <button id="report-print-button" class="hidden absolute top-4 left-4 text-gray-500 hover:text-gray-800 text-xl" title="Xuất Báo Cáo HTML"><i class="fas fa-download"></i></button>
+                <h2 id="gemini-modal-title" class="text-2xl font-bold text-indigo-700 mb-4">✨ Đang tải giải thích...</h2>
+                <div id="gemini-loader-container" class="flex justify-center items-center h-48"><div class="gemini-loader"></div></div>
+                <div id="gemini-modal-content" class="text-gray-800 text-lg leading-relaxed space-y-4"></div>
+            </div>
+        </div>
+        
+        <!-- [NÂNG CẤP] Modal Bảng xếp hạng -->
+        <div id="leaderboard-modal" class="absolute inset-0 bg-gray-900 bg-opacity-90 rounded-3xl hidden flex-col items-center justify-center p-8 z-[65] transition-opacity duration-300">
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 md:p-8 relative">
+                <button id="close-leaderboard-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl"><i class="fas fa-times-circle"></i></button>
+                <h2 class="text-3xl font-extrabold text-center text-yellow-500 mb-6"><i class="fas fa-trophy mr-2"></i> BẢNG XẾP HẠNG</h2>
+                <ol id="leaderboard-list" class="list-decimal list-inside space-y-3"></ol>
+            </div>
+        </div>
+
+        <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl z-[70]"></div>
+        <!-- TOAST THÔNG BÁO DANH HIỆU -->
+        <div id="achievement-toast" class="fixed bottom-5 right-5 bg-gray-900 text-white p-4 rounded-lg shadow-2xl flex items-center gap-4 transition-transform duration-500 translate-x-[120%] z-50">
+            <!-- Nội dung sẽ được JS chèn vào -->
+        </div>
+
+	<!-- MODAL DANH SÁCH DANH HIỆU -->
+	<div id="achievements-modal" class="fixed inset-0 bg-black bg-opacity-70 items-center justify-center p-4 hidden z-[70]">
+	    <div class="modal-content bg-white w-full max-w-2xl rounded-2xl shadow-xl p-8 relative animate-scale-in">
+	        <h2 class="text-3xl font-extrabold text-center text-indigo-800 mb-6">Bộ Sưu Tập Danh Hiệu</h2>
+	        <ul id="achievements-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+	            <!-- Danh sách sẽ được JS chèn vào -->
+	        </ul>
+	        <button id="close-achievements-modal" class="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-2xl">
+	            <i class="fas fa-times-circle"></i>
+	        </button>
+	</div>
+    </div>
+    
+    <script src="js/questions.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

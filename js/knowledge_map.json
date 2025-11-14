@@ -1,0 +1,110 @@
+{
+  "9": {
+    "D": {
+      "name": "Đại số 9",
+      "chapters": [
+            { "id": 1, "name": "Chương 1. Phương trình và Hệ phương trình" },
+            { "id": 2, "name": "Chương 2. Bất đẳng thức. Bất phương trình bậc nhất một ẩn" },
+            { "id": 3, "name": "Chương 3. Căn thức" },
+            { "id": 4, "name": "Chương 4. Hàm số y = ax^2 và Phương trình bậc hai một ẩn" },
+            { "id": 5, "name": "Chương 5. Một số yếu tố thống kê" },
+            { "id": 6, "name": "Chương 6. Một số yếu tố xác suất" },
+            { "id": 7, "name": "Chương 7. Một số bài toán thực tế trong thi tuyển sinh" }
+        ]
+    },
+    "H": {
+      "name": "Hình học 9",
+      "chapters": [
+            { "id": 1, "name": "Chương 1. Hệ thức lượng trong tam giác vuông" },
+            { "id": 2, "name": "Chương 2. Đường tròn" },
+            { "id": 3, "name": "Chương 3. Tứ giác nội tiếp. Đa giác đều" },
+            { "id": 4, "name": "Chương 4. Các hình khối trong thực tiễn" }
+        ]
+    },
+    "C": {
+      "name": "Chuyên đề 9",
+      "chapters": []
+    }
+  },
+  "10": {
+    "D": {
+      "name": "Đại số & Thống kê 10",
+      "chapters": [
+        { "id": 1, "name": "Chương 1. Mệnh đề. Tập hợp" },
+        { "id": 2, "name": "Chương 2. BPT và hệ BPT bậc nhất hai ẩn" },
+        { "id": 3, "name": "Chương 3. Hàm số bậc hai và đồ thị" },
+        { "id": 6, "name": "Chương 6. Thống kê" },
+        { "id": 7, "name": "Chương 7. Bất phương trình bậc 2 một ẩn" },
+        { "id": 8, "name": "Chương 8. Đại số tổ hợp" },
+        { "id": 10, "name": "Chương 10. Xác suất" }
+      ]
+    },
+    "H": {
+      "name": "Hình học 10",
+      "chapters": [
+        { "id": 4, "name": "Chương 4. Hệ thức lượng trong tam giác" },
+        { "id": 5, "name": "Chương 5. Véctơ" },
+        { "id": 9, "name": "Chương 9. Phương pháp toạ độ trong mặt phẳng (Oxy)" }
+      ]
+    },
+    "C": {
+        "name": "Chuyên đề 10",
+        "chapters": [
+            { "id": 1, "name": "Chuyên đề 1. Hệ phương trình bậc nhất 3 ẩn" },
+            { "id": 2, "name": "Chuyên đề 2. Phương pháp quy nạp toán học" },
+            { "id": 3, "name": "Chuyên đề 3. Ba đường conic" }
+        ]
+    }
+  },
+  "11": {
+    "D": {
+        "name": "Đại số & Giải tích 11",
+        "chapters": [
+            { "id": 1, "name": "Chương 1. Hàm số lượng giác và phương trình lượng giác" },
+            { "id": 2, "name": "Chương 2. Dãy số. Cấp số cộng. Cấp số nhân" },
+            { "id": 3, "name": "Chương 3. Giới hạn. Hàm số liên tục" },
+            { "id": 5, "name": "Chương 5. Các số đặc trưng của mẫu số liệu ghép nhóm" },
+            { "id": 6, "name": "Chương 6. Hàm số mũ và hàm số lôgarit" },
+            { "id": 7, "name": "Chương 7. Đạo hàm" },
+            { "id": 9, "name": "Chương 9. Xác suất" }
+        ]
+    },
+    "H": {
+        "name": "Hình học 11",
+        "chapters": [
+            { "id": 4, "name": "Chương 4. Quan hệ song song trong không gian" },
+            { "id": 8, "name": "Chương 8. Quan hệ vuông góc trong không gian" }
+        ]
+    },
+    "C": {
+        "name": "Chuyên đề 11",
+        "chapters": [
+            { "id": 1, "name": "Chuyên đề 1. Phép biến hình phẳng" },
+            { "id": 2, "name": "Chuyên đề 2. Lý thuyết đồ thị" },
+            { "id": 3, "name": "Chuyên đề 3. Vẽ kỹ thuật" }
+        ]
+    }
+  },
+  "12": {
+    "D": {
+        "name": "Giải tích 12",
+        "chapters": [
+            { "id": 1, "name": "Chương 1. Ứng dụng đạo hàm để khảo sát hàm số" },
+            { "id": 3, "name": "Chương 3. Các số đặc trưng của mẫu số liệu ghép nhóm" },
+            { "id": 4, "name": "Chương 4. Nguyên hàm, tích phân và ứng dụng" },
+            { "id": 6, "name": "Chương 6. Một số yếu tố xác suất" }
+        ]
+    },
+    "H": {
+        "name": "Hình học 12",
+        "chapters": [
+            { "id": 2, "name": "Chương 2. Tọa độ của véc-tơ trong không gian" },
+            { "id": 5, "name": "Chương 5. Phương trình mặt phẳng, đường thẳng, mặt cầu" }
+        ]
+    },
+    "C": {
+        "name": "Chuyên đề 12",
+        "chapters": []
+    }
+  }
+}
