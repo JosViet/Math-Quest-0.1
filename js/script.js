@@ -198,7 +198,7 @@ function initializeApp() {
     safeSetOnClick(closeLeaderboardModalBtn, () => leaderboardModal.classList.add('hidden'));
     safeSetOnClick(achievementsButton, displayAchievementsModal);
     safeSetOnClick(closeAchievementsModalBtn, () => achievementsModal.classList.add('hidden'));
-    safeSetOnClick(replayChapterButton, () => startSelectedPlaythrough(false)); 
+    safeSetOnClick(replayChapterButton, () => {chapterModal.classList.add('hidden'); startSelectedPlaythrough(false))};
     safeSetOnClick(nextChapterButton, showMainMenu);
 
     // Load các thành phần khác
@@ -680,7 +680,7 @@ function checkMultipleAnswers(q) {
 function endGame() {
     gameActive = false;
     clearInterval(questionTimerInterval);
-    // checkAchievements();
+    checkAchievements();
     if (gameMode === 'challenge') {
         saveScoreToLeaderboard(playerName, totalScore);
     }
@@ -1016,6 +1016,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
