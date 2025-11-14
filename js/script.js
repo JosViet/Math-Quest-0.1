@@ -194,13 +194,10 @@ function initializeApp() {
  */
 function parseLatexBlock(latexBlock, questionType) {
     try {
-        // --- Bước 1: Kiểm tra và loại bỏ ngay các câu hỏi phức tạp ---
         if (/\\immini|\\begin{tikzpicture}/.test(latexBlock)) {
-            console.log("Bỏ qua câu hỏi chứa lệnh phức tạp:", latexBlock.substring(0, 50) + "...");
             return null;
         }
 
-        // --- Bước 2: Chuẩn bị nội dung thô và trích xuất lời giải ---
         let content = latexBlock
             .replace(/\\begin{ex}([\s\S]*?)\\end{ex}/s, '$1')
             .replace(/%\[.*?\]/g, '')
@@ -209,18 +206,19 @@ function parseLatexBlock(latexBlock, questionType) {
         const result = {
             question: '',
             options: [],
-            answer: null, // Sẽ là chuỗi hoặc mảng
+            answer: null,
             tip: '',
             type: '' 
         };
 
+        // --- Bước 2: Trích xuất lời giải VÀ XÓA NÓ KHỎI content ---
         const tipMatch = content.match(/\\loigiai\s*\{([\s\S]*?)\}/s);
         if (tipMatch) {
             result.tip = tipMatch[1].trim();
+            // [SỬA LỖI] Xóa toàn bộ khối \loigiai{...} khỏi content
             content = content.replace(/\\loigiai\s*\{([\s\S]*?)\}/s, '').trim();
         }
         
-        // Dọn dẹp môi trường center (thường chứa hình)
         content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
 
         // --- Bước 4: Phân tích dựa trên loại câu hỏi ---
@@ -251,17 +249,19 @@ function parseLatexBlock(latexBlock, questionType) {
             if (!answerMatch) return null;
 
             result.answer = answerMatch[1].trim();
+            // [SỬA LỖI] Xóa toàn bộ khối \shortans[...]\{...\} khỏi content
             result.question = content.replace(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s, '').trim();
         }
         else if (questionType === 'trac_nghiem_dung_sai') {
-            result.type = 'mcq_multiple'; // <-- LOẠI CÂU HỎI MỚI
+            // ... (Logic cho mcq_multiple giữ nguyên, đã đúng)
+            result.type = 'mcq_multiple';
             const choiceTFMatch = content.match(/\\choiceTF\s*\{([\s\S]*?)\}/s);
             if (!choiceTFMatch) return null;
 
             result.question = content.substring(0, choiceTFMatch.index).trim() + 
                               "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
             
-            result.answer = []; // <-- Đáp án là một MẢNG
+            result.answer = [];
             
             const optionsBlock = choiceTFMatch[1];
             const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
@@ -272,20 +272,20 @@ function parseLatexBlock(latexBlock, questionType) {
                 if (optionText) {
                     result.options.push(optionText);
                     if (match[1]) {
-                        result.answer.push(optionText); // <-- Thêm vào mảng đáp án đúng
+                        result.answer.push(optionText);
                     }
                 }
             }
         }
         else {
-            return null; // Bỏ qua các loại câu hỏi không xác định
+            return null;
         }
 
-        // --- Bước 5 & 6: Dọn dẹp cuối cùng và kiểm tra tính hợp lệ ---
+        // --- Bước 5 & 6: Dọn dẹp và kiểm tra ---
         result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
         
         if (!result.question || !result.answer) return null;
-        if (result.type === 'mcq_multiple' && result.answer.length === 0) return null; // Loại bỏ nếu không có đáp án đúng nào
+        if (result.type === 'mcq_multiple' && result.answer.length === 0) return null;
         if (result.type.startsWith('mcq') && result.options.length < 2) return null;
 
         return result;
@@ -295,7 +295,6 @@ function parseLatexBlock(latexBlock, questionType) {
         return null;
     }
 }
-
 
 // =================================================================================
 // PHẦN 4: LOGIC ĐIỀU HƯỚNG VÀ HIỂN THỊ MODAL
@@ -925,6 +924,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
