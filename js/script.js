@@ -151,26 +151,7 @@ function initializeApp() {
     loadSound(soundClick, soundClickBase64, 'click'); loadSound(soundStart, soundStartBase64, 'bắt đầu');
     loadSound(soundTimerTick, soundTimerTickBase64, 'đồng hồ'); loadSound(soundPowerup, soundPowerupBase64, 'trợ giúp');
 
-        // === [BƯỚC ĐIỀU TRA] KIỂM TRA TẤT CẢ CÁC DOM ELEMENTS ===
-    console.log("Kiểm tra DOM elements trong initializeApp:");
-    console.log("practiceButton:", document.getElementById('practice-button'));
-    console.log("challengeButton:", document.getElementById('challenge-button'));
-    console.log("backToGradeSelectBtn:", document.getElementById('back-to-grade-select'));
-    console.log("backFromChapterSelectBtn:", document.getElementById('back-to-main-button'));
-    console.log("startChapterSelectionButton:", document.getElementById('start-chapter-selection-button'));
-    console.log("practiceQPCInput:", document.getElementById('practice-qpc-input'));
-    console.log("nextButton:", document.getElementById('next-button'));
-    console.log("explainButton:", document.getElementById('explain-button'));
-    console.log("closeGeminiModalButton:", document.getElementById('close-gemini-modal'));
-    console.log("powerup5050Btn:", document.getElementById('powerup-5050'));
-    console.log("powerupAddTimeBtn:", document.getElementById('powerup-add-time'));
-    console.log("leaderboardButton:", document.getElementById('leaderboard-button'));
-    console.log("closeLeaderboardModalBtn:", document.getElementById('close-leaderboard-modal'));
-    console.log("achievementsButton:", document.getElementById('achievements-button'));
-    console.log("closeAchievementsModalBtn:", document.getElementById('close-achievements-modal'));
-    console.log("replayChapterButton:", document.getElementById('replay-chapter-button'));
-    console.log("nextChapterButton:", document.getElementById('next-chapter-button'));
-    console.log("==============================================");
+
     // Gán sự kiện onclick
     practiceButton.onclick = () => { gameMode = 'practice'; showGradeSelection(); };
     challengeButton.onclick = () => { gameMode = 'challenge'; showGradeSelection(); };
@@ -786,6 +767,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
