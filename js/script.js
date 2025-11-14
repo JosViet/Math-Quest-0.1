@@ -256,7 +256,7 @@ function extractBalancedContent(text, command) {
  */
 function parseLatexBlock(latexBlock, questionType) {
     try {
-        if (/\\immini|\\begin{tikzpicture}/.test(latexBlock)) {
+        if (/\\immini|\\begin{tikzpicture}|\\begin{bt}/.test(latexBlock)) {
             return null;
         }
 
@@ -335,6 +335,7 @@ function parseLatexBlock(latexBlock, questionType) {
             }
         }
         else {
+            console.log(`Bỏ qua câu hỏi có type chưa được hỗ trợ: '${questionType}'`);
             return null;
         }
 
@@ -1015,6 +1016,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
