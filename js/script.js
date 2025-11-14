@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function loadGameData() {
+    const messageInterval = showLoadingMessages();
     try {
         console.log("Bắt đầu tải dữ liệu game...");
         const [mapResponse, bankResponse] = await Promise.all([
@@ -142,6 +143,8 @@ async function loadGameData() {
     } catch (error) {
         console.error("Lỗi nghiêm trọng khi tải dữ liệu:", error);
         document.body.innerHTML = `<div style="text-align: center; color: red; padding: 2rem; font-size: 1.2rem;">Lỗi: Không thể tải được ngân hàng câu hỏi.<br>Vui lòng thử lại sau hoặc liên hệ quản trị viên.</div>`;
+    } finally {
+        clearInterval(messageInterval); // Dừng đổi thông điệp khi tải xong (dù thành công hay thất bại)
     }
 }
 
@@ -364,7 +367,30 @@ function parseLatexBlock(latexBlock, questionType) {
 // =================================================================================
 // PHẦN 4: LOGIC ĐIỀU HƯỚNG VÀ HIỂN THỊ MODAL
 // =================================================================================
-
+function showLoadingMessages() {
+    const loaderText = document.querySelector('#initial-loader p');
+    const messages = [
+        "Đang kết nối với máy chủ...",
+        "Tải ngân hàng câu hỏi (có thể mất vài giây)...",
+        "Sắp xếp các công thức toán học...",
+        "Chuẩn bị cho cuộc chinh phục tri thức!"
+    ];
+    let messageIndex = 0;
+    
+    // Hiển thị thông điệp đầu tiên ngay lập tức
+    if(loaderText) loaderText.textContent = messages[messageIndex];
+    
+    // Cứ mỗi 3 giây lại đổi thông điệp
+    const intervalId = setInterval(() => {
+        messageIndex++;
+        if (messageIndex < messages.length && loaderText) {
+            loaderText.textContent = messages[messageIndex];
+        } else {
+            clearInterval(intervalId);
+        }
+    }, 3000);
+    return intervalId;
+}
 function showMainMenu() {
     gradeSelectionModal.classList.add('hidden');
     subjectSelectionModal.classList.add('hidden');
@@ -989,6 +1015,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
