@@ -493,6 +493,7 @@ function getSelectedCheckboxes() {
 // PHẦN 5: LOGIC CỐT LÕI CỦA GAME 
 // =================================================================================
 
+// [SỬA ĐỔI HOÀN TOÀN] Hàm bắt đầu game với logic chọn câu hỏi ngẫu nhiên
 function startSelectedPlaythrough(isReviewMode = false) {
     gameActive = true;
     currentQuestionIndex = 0;
@@ -503,6 +504,7 @@ function startSelectedPlaythrough(isReviewMode = false) {
     gameReport = [];
     powerUpFiftyFiftyCount = 1;
     powerUpAddTimeCount = 1;
+    wronglyAnsweredQuestions = []; // Luôn reset khi bắt đầu vòng mới
 
     playerName = playerNameInput.value.trim() || "Chiến Binh";
     soundStart.play().catch(e => {});
@@ -518,25 +520,29 @@ function startSelectedPlaythrough(isReviewMode = false) {
         const gradeMap = { "9": "9", "10": "0", "11": "1", "12": "2" };
         const metadataGradeCode = gradeMap[selectedGrade];
 
+        // 1. LỌC TẤT CẢ CÁC CÂU HỎI THÔ PHÙ HỢP
         const filteredRawQuestions = fullQuestionBank.filter(q => 
             q.metadata.lop_ma === metadataGradeCode &&
             q.metadata.mon_ma === selectedSubject &&
             selectedChapterIds.includes(q.metadata.chuong)
         );
-        // [THÊM ĐOẠN CODE ĐIỀU TRA NÀY VÀO]
-        console.log(`Đã lọc được ${filteredRawQuestions.length} câu hỏi thô.`);
-        const mcqCount = filteredRawQuestions.filter(q => q.question_type === 'trac_nghiem_mot_dap_an').length;
-        console.log(`Trong đó có ${mcqCount} câu trắc nghiệm.`);
-        // ===================================
 
-        questionsInCurrentPlaythrough = filteredRawQuestions
+        // [LOGIC MỚI]
+        // 2. XÁO TRỘN TOÀN BỘ KHO CÂU HỎI ĐÃ LỌC
+        const shuffledPool = shuffleArray(filteredRawQuestions);
+
+        // 3. GIỚI HẠN SỐ LƯỢNG (CHỌN NGẪU NHIÊN)
+        const numQuestionsPerChapter = gameMode === 'practice' ? practiceQuestionsPerChapter : 10;
+        const totalQuestionsToPlay = Math.min(shuffledPool.length, selectedChapterIds.length * numQuestionsPerChapter);
+        const questionsToParse = shuffledPool.slice(0, totalQuestionsToPlay);
+        
+        // 4. "DỊCH" CÁC CÂU HỎI ĐÃ ĐƯỢC CHỌN NGẪU NHIÊN
+        questionsInCurrentPlaythrough = questionsToParse
             .map(q => parseLatexBlock(q.latex_block, q.question_type))
             .filter(q => q !== null);
-
+        
+        // 5. (Tùy chọn) Xáo trộn một lần nữa để đảm bảo thứ tự chơi cũng ngẫu nhiên
         questionsInCurrentPlaythrough = shuffleArray(questionsInCurrentPlaythrough);
-        const numQuestionsPerChapter = gameMode === 'practice' ? practiceQuestionsPerChapter : 10;
-        const totalQuestionsToPlay = Math.min(questionsInCurrentPlaythrough.length, selectedChapterIds.length * numQuestionsPerChapter);
-        questionsInCurrentPlaythrough = questionsInCurrentPlaythrough.slice(0, totalQuestionsToPlay);
         
         chapterTitle.textContent = `${gameMode === 'challenge' ? 'Thử Thách' : 'Luyện Tập'}: ${selectedChapterNames.length} chương`;
     }
@@ -547,6 +553,7 @@ function startSelectedPlaythrough(isReviewMode = false) {
         return;
     }
 
+    // Cập nhật UI và bắt đầu (giữ nguyên)
     if (gameMode === 'challenge') {
         currentLives = 3;
         livesContainer.style.display = 'block';
@@ -1030,6 +1037,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
