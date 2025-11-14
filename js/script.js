@@ -150,7 +150,7 @@ const backFromChapterSelectBtn = document.getElementById('back-to-main-button');
 // PHẦN 2: KHỞI TẠO VÀ TẢI DỮ LIỆU
 // =================================================================================
 
-window.onload = function() {
+document.addEventListener('DOMContentLoaded', function()  {
     loadGameData();
 };
 
@@ -823,3 +823,4 @@ function checkAchievements() {
     }
 
 }
+
