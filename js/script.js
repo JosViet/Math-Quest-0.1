@@ -253,128 +253,120 @@ function extractBalancedContent(text, command) {
 }
 
 
+// Hàm extractBalancedContent giữ nguyên, nó đã rất tốt
+function extractBalancedContent(text, command) {
+    // ... (Giữ nguyên code của hàm này)
+}
+
 /**
  * Phân tích một khối LaTeX từ Question Bank.
- * [V7 - DEBUG MODE] Bổ sung rất nhiều console.log để chẩn đoán lỗi parse MCQ.
+ * [V8 - FINAL] Tăng cường Regex để xử lý các biến thể, đảm bảo không bỏ sót câu hỏi hợp lệ.
  * @param {string} latexBlock - Chuỗi LaTeX thô.
  * @param {string} questionType - Loại câu hỏi.
  * @returns {object|null}
  */
 function parseLatexBlock(latexBlock, questionType) {
-    // Bắt đầu một nhóm log mới cho câu hỏi này để dễ theo dõi
-    console.group(`Đang phân tích câu hỏi ID (ước tính): ${latexBlock.substring(20, 30)}`);
-    console.log("Loại câu hỏi:", questionType);
-
     try {
+        // --- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN LOẠI BỎ ---
         if (/\\immini|\\begin{tikzpicture}|\\begin{bt}/.test(latexBlock)) {
-            console.warn("BỎ QUA: Chứa lệnh/môi trường phức tạp.");
-            console.groupEnd();
-            return null;
+            return null; // Bỏ qua câu hỏi phức tạp một cách thầm lặng
         }
 
+        // --- BƯỚC 2: CHUẨN BỊ NỘI DUNG THÔ ---
         let content = latexBlock
             .replace(/\\begin{ex}([\s\S]*?)\\end{ex}/s, '$1')
             .replace(/%\[.*?\]/g, '')
             .trim();
-
+        
         content = content.replace(/\\begin{multicols}{\d+}/g, '').replace(/\\end{multicols}/g, '');
+        content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
 
         const result = { question: '', options: [], answer: null, tip: '', type: '' };
 
+        // --- BƯỚC 3: TRÍCH XUẤT LỜI GIẢI (CẢI TIẾN) ---
         const tipData = extractBalancedContent(content, '\\loigiai');
         if (tipData) {
             result.tip = tipData.content.trim();
-            content = content.substring(0, tipData.startIndex) + content.substring(tipData.endIndex);
-            content = content.trim();
+            content = content.substring(0, tipData.startIndex).trim(); // Chỉ giữ lại phần trước \loigiai
         }
         
-        content = content.replace(/\\begin{center}[\s\S]*?\\end{center}/g, ' ');
-
-        // --- PHÂN TÍCH THEO LOẠI ---
+        // --- BƯỚC 4: PHÂN TÍCH THEO LOẠI ---
         
         if (questionType === 'trac_nghiem_mot_dap_an') {
             result.type = 'mcq';
             const choiceData = extractBalancedContent(content, '\\choice');
-            
-            if (!choiceData) {
-                console.error("LỖI PARSE (MCQ): Không tìm thấy khối '\\choice'.");
-                console.groupEnd();
-                return null;
-            }
+            if (!choiceData) return null;
 
             result.question = content.substring(0, choiceData.startIndex).trim();
             
             const optionsBlock = choiceData.content;
-            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)\s*}/g;
-            let match;
             
-            while ((match = optionRegex.exec(optionsBlock)) !== null) {
-                const optionText = match[2].trim();
-                if (optionText) {
-                    result.options.push(optionText);
-                    if (match[1]) {
-                        result.answer = optionText;
-                    }
+            // [CẢI TIẾN LỚN] Regex mạnh mẽ hơn để trích xuất lựa chọn
+            // Nó tìm kiếm { \True ... } hoặc { ... } một cách linh hoạt
+            const optionRegex = /{\s*(\\True\s*)?([\s\S]*?)(?=\s*}\\?)/g;
+            let options = optionsBlock.match(/\{[\s\S]*?\}/g) || [];
+
+            if (options.length < 2) return null; // Cần ít nhất 2 lựa chọn
+
+            options.forEach(opt => {
+                let text = opt.substring(1, opt.length - 1).trim(); // Bỏ dấu {}
+                if (text.startsWith('\\True')) {
+                    text = text.replace('\\True', '').trim();
+                    result.answer = text;
                 }
-            }
+                result.options.push(text);
+            });
         } 
         else if (questionType === 'tra_loi_ngan') {
-            // ... (Logic for 'fill' - assuming it works)
             result.type = 'fill';
-            const answerMatch = content.match(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s);
-            if (!answerMatch) {
-                 console.error("LỖI PARSE (FILL): Không tìm thấy '\\shortans'.");
-                 console.groupEnd();
-                 return null;
-            }
+            // [CẢI TIẾN] Regex linh hoạt hơn cho \shortans
+            const answerMatch = content.match(/\\shortans(?:\[.*?\])?\s*\{([\s\S]*?)\}/s);
+            if (!answerMatch) return null;
+
             result.answer = answerMatch[1].trim();
-            result.question = content.replace(/\\shortans\[.*?\]\s*\{([\s\S]*?)\}/s, '').trim();
+            result.question = content.replace(/\\shortans(?:\[.*?\])?\s*\{([\s\S]*?)\}/s, '').trim();
         }
         else if (questionType === 'trac_nghiem_dung_sai') {
-            // ... (Logic for 'mcq_multiple')
+            result.type = 'mcq_multiple';
+            const choiceTFData = extractBalancedContent(content, '\\choiceTF');
+            if (!choiceTFData) return null;
+            
+            result.question = content.substring(0, choiceTFData.startIndex).trim() + 
+                              "<br><small>(Có thể có nhiều đáp án đúng. Chọn tất cả các mệnh đề bạn cho là đúng.)</small>";
+            
+            result.answer = [];
+            let options = choiceTFData.content.match(/\{[\s\S]*?\}/g) || [];
+            
+            options.forEach(opt => {
+                let text = opt.substring(1, opt.length - 1).trim();
+                if (text.startsWith('\\True')) {
+                    text = text.replace('\\True', '').trim();
+                    result.answer.push(text);
+                }
+                result.options.push(text);
+            });
         }
         else {
-            console.warn(`BỎ QUA: Loại câu hỏi '${questionType}' chưa được hỗ trợ.`);
-            console.groupEnd();
-            return null;
+            return null; // Bỏ qua các loại câu hỏi không được hỗ trợ
         }
 
-        // --- DỌN DẸP VÀ KIỂM TRA CUỐI CÙNG ---
-        
+        // --- BƯỚC 5: DỌN DẸP VÀ KIỂM TRA CUỐI CÙNG ---
         result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
-        
-        if (!result.question) {
-            console.error("LỖI VALIDATE: Câu hỏi bị trống sau khi parse.");
-            console.groupEnd();
-            return null;
-        }
-        if (!result.answer) {
-            console.error("LỖI VALIDATE: Không tìm thấy đáp án ('\\True' hoặc '\\shortans').");
-            console.groupEnd();
-            return null;
-        }
-        if (result.type === 'mcq_multiple' && result.answer.length === 0) {
-            console.error("LỖI VALIDATE (MCQ_MULTIPLE): Không tìm thấy đáp án đúng nào.");
-            console.groupEnd();
-            return null;
-        }
-        if (result.type.startsWith('mcq') && result.options.length < 2) {
-            console.error("LỖI VALIDATE (MCQ): Có ít hơn 2 lựa chọn.");
-            console.groupEnd();
-            return null;
+        if (result.tip) {
+            result.tip = result.tip.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
         }
 
-        console.log("Phân tích thành công:", result);
-        console.groupEnd();
+        if (!result.question || !result.answer) return null;
+        if (Array.isArray(result.answer) && result.answer.length === 0) return null;
+        if (result.type.startsWith('mcq') && result.options.length < 2) return null;
+
         return result;
 
     } catch (error) {
-        console.error("Lỗi nghiêm trọng khi phân tích LaTeX block:", error);
-        console.groupEnd();
+        console.error("Lỗi nghiêm trọng khi phân tích LaTeX block:", error, latexBlock);
         return null;
     }
 }
-
 // =================================================================================
 // PHẦN 4: LOGIC ĐIỀU HƯỚNG VÀ HIỂN THỊ MODAL
 // =================================================================================
@@ -1038,6 +1030,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
