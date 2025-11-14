@@ -239,6 +239,8 @@ function parseLatexBlock(latexBlock, questionType) {
             .replace(/\\begin{ex}([\s\S]*?)\\end{ex}/s, '$1')
             .replace(/%\[.*?\]/g, '')
             .trim();
+        // [NÂNG CẤP] Loại bỏ môi trường multicol nhưng giữ lại nội dung
+        content = content.replace(/\\begin{multicols}{\d+}/g, '').replace(/\\end{multicols}/g, '');
 
         const result = { question: '', options: [], answer: null, tip: '', type: '' };
 
@@ -313,8 +315,15 @@ function parseLatexBlock(latexBlock, questionType) {
 
         // --- Dọn dẹp và kiểm tra ---
         // Chuyển đổi các môi trường itemize thành danh sách HTML
-        result.question = result.question.replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>').replace(/\\item/g, '<li>');
-        result.tip = result.tip.replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>').replace(/\\item/g, '<li>');
+        result.question = result.question
+            .replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>')
+            .replace(/\\begin{enumerate}/g, '<ol>').replace(/\\end{enumerate}/g, '</ol>')
+            .replace(/\\item/g, '<li>');
+        
+        result.tip = result.tip
+            .replace(/\\begin{itemize}/g, '<ul>').replace(/\\end{itemize}/g, '</ul>')
+            .replace(/\\begin{enumerate}/g, '<ol>').replace(/\\end{enumerate}/g, '</ol>')
+            .replace(/\\item/g, '<li>');
         
         result.question = result.question.replace(/\\\\/g, '<br>').replace(/\s+/g, ' ').trim();
         
@@ -958,6 +967,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
