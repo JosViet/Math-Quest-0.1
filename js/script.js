@@ -253,10 +253,6 @@ function extractBalancedContent(text, command) {
 }
 
 
-// Hàm extractBalancedContent giữ nguyên, nó đã rất tốt
-function extractBalancedContent(text, command) {
-    // ... (Giữ nguyên code của hàm này)
-}
 
 /**
  * Phân tích một khối LaTeX từ Question Bank.
@@ -1030,6 +1026,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
