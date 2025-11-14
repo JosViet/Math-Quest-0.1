@@ -152,7 +152,7 @@ const backFromChapterSelectBtn = document.getElementById('back-to-main-button');
 
 document.addEventListener('DOMContentLoaded', function()  {
     loadGameData();
-};
+}
 
 async function loadGameData() {
     // ... Giữ nguyên hàm loadGameData của bạn ...
@@ -823,4 +823,5 @@ function checkAchievements() {
     }
 
 }
+
 
