@@ -149,7 +149,11 @@ function initializeApp() {
     // [QUAN TRỌNG] Ẩn màn hình loading ngay lập tức
     const loader = document.getElementById('initial-loader');
     if (loader) {
-        loader.style.display = 'none';
+        // Thêm hiệu ứng mờ dần đẹp mắt
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 500); // Ẩn sau khi hiệu ứng kết thúc
     }
 
     // Tải âm thanh
@@ -985,6 +989,7 @@ function checkAchievements() {
     }
 
 }
+
 
 
 
